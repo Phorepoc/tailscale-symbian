@@ -1,0 +1,41 @@
+# headscale v0.29.5 config used by the S0/S1 spike (server_url = the spike box)
+server_url: http://192.168.2.247:18080
+listen_addr: 0.0.0.0:18080
+metrics_listen_addr: 127.0.0.1:19090
+grpc_listen_addr: 127.0.0.1:50443
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+  allocation: sequential
+derp:
+  server:
+    enabled: true
+    region_id: 999
+    region_code: phe
+    region_name: Phecloud spike
+    stun_listen_addr: 0.0.0.0:3478
+    private_key_path: /var/lib/headscale/derp_server_private.key
+    automatically_add_embedded_derp_region: true
+    ipv4: 192.168.2.247
+  urls: []
+  paths: []
+  auto_update_enabled: false
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+log:
+  level: info
+dns:
+  magic_dns: false
+  override_local_dns: false
+  base_domain: phe.internal
+  nameservers:
+    global: []
+policy:
+  mode: file
+  path: ""
+unix_socket: /var/run/headscale/headscale.sock
+unix_socket_permission: "0770"
