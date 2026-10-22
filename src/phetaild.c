@@ -121,16 +121,6 @@ int main(int argc, char **argv)
 	printf("register: %s\n", strstr(resp, "\"MachineAuthorized\":true") ? "authorized" : resp);
 	free(resp);
 
-	/* "Lite" endpoint update first: Headscale takes Hostinfo/NetInfo (our home
-	 * DERP region) from non-streaming requests only. */
-	snprintf(body, sizeof body,
-		 "{\"Version\":%d,\"NodeKey\":\"nodekey:%s\",\"DiscoKey\":\"discokey:%s\",\"Stream\":false,"
-		 "\"OmitPeers\":true,\"Hostinfo\":%s}",
-		 CAPVER, nhex, dhex, HOSTINFO);
-	if (ctrl_post(&c, "/machine/map", body, strlen(body), &resp, &rlen) == 0)
-		printf("map: lite update (home DERP 999) accepted\n");
-	free(resp);
-
 	snprintf(body, sizeof body,
 		 "{\"Version\":%d,\"NodeKey\":\"nodekey:%s\",\"DiscoKey\":\"discokey:%s\",\"Stream\":true,"
 		 "\"Compress\":\"\",\"KeepAlive\":true,\"OmitPeers\":false,\"Hostinfo\":%s}",
@@ -147,6 +137,17 @@ int main(int argc, char **argv)
 	printf("map: first message %u bytes\n", (unsigned)strlen(msg));
 	netmap_apply(msg, strlen(msg));
 	free(msg);
+
+	/* "Lite" endpoint update once the stream is up (as tailscaled does): Headscale
+	 * takes Hostinfo/NetInfo (our home DERP) from non-streaming requests and only
+	 * pushes the change to peers while we are online. */
+	snprintf(body, sizeof body,
+		 "{\"Version\":%d,\"NodeKey\":\"nodekey:%s\",\"DiscoKey\":\"discokey:%s\",\"Stream\":false,"
+		 "\"OmitPeers\":true,\"Hostinfo\":%s}",
+		 CAPVER, nhex, dhex, HOSTINFO);
+	if (ctrl_post(&c, "/machine/map", body, strlen(body), &resp, &rlen) == 0)
+		printf("map: lite update (home DERP 999) accepted\n");
+	free(resp);
 
 	if (derp_connect(host, port))
 		return 1;

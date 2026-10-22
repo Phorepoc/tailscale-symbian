@@ -16,6 +16,8 @@ docker inspect phe-httpd >/dev/null 2>&1 || docker run -d --name phe-httpd --cpu
 	--network container:phe-tsnode busybox:1.37 sh -c \
 	"mkdir -p /www && echo hello from phe-peer over the tailnet > /www/index.html && httpd -f -p 8080 -h /www" >/dev/null
 sleep 5
+echo "== tailscale ping --icmp from the peer (peer-initiated WireGuard + lwIP ICMP)"
+timeout 40 docker exec phe-tsnode tailscale ping --icmp -c 3 phetail
 echo "== tailscale ping (disco) from the peer"
 timeout 30 docker exec phe-tsnode tailscale ping -c 3 phetail
 echo "== curl through phetaild SOCKS5"
