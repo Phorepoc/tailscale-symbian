@@ -84,52 +84,36 @@ static int noise_write(ctrl *c, const uint8_t *p, size_t len)
 	return 0;
 }
 
-/* Fill c->pt with the next decrypted record. */
-static int noise_fill(ctrl *c, int timeout_ms)
+/* Reads what the socket has (waiting up to timeout_ms) and decrypts every
+ * complete record into h2in. Returns -1 on error/EOF. */
+static int feed(ctrl *c, int timeout_ms)
 {
 	uint8_t nonce[12];
-	for (;;) {
-		if (c->rawlen >= 3) {
-			size_t flen = 3 + get_be16(c->raw + 1);
-			if (c->raw[0] != 4) {
-				fprintf(stderr, "noise: unexpected record type %d\n", c->raw[0]);
-				return -1;
-			}
-			if (c->rawlen >= flen) {
-				mknonce(nonce, c->rxn++);
-				if (tc_aead_open(c->pt, c->rxk, nonce, c->raw + 3, flen - 3, NULL, 0)) {
-					fprintf(stderr, "noise: decrypt failed\n");
-					return -1;
-				}
-				c->ptoff = 0;
-				c->ptlen = flen - 3 - 16;
-				memmove(c->raw, c->raw + flen, c->rawlen - flen);
-				c->rawlen -= flen;
-				return 0;
-			}
-		}
-		{
-			int r = plat_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, timeout_ms);
-			if (r <= 0)
-				return -1;
-			c->rawlen += (size_t)r;
-		}
-	}
-}
-
-static int noise_read(ctrl *c, uint8_t *out, size_t len)
-{
-	while (len) {
-		size_t n;
-		if (c->ptoff == c->ptlen && noise_fill(c, 15000))
+	if (!(c->rawlen >= 3 && c->rawlen >= 3u + get_be16(c->raw + 1))) {
+		int r = plat_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, timeout_ms);
+		if (r < 0)
 			return -1;
-		n = c->ptlen - c->ptoff;
-		if (n > len)
-			n = len;
-		memcpy(out, c->pt + c->ptoff, n);
-		c->ptoff += n;
-		out += n;
-		len -= n;
+		c->rawlen += (size_t)r;
+	}
+	while (c->rawlen >= 3) {
+		size_t flen = 3 + get_be16(c->raw + 1), pl;
+		if (c->raw[0] != 4) {
+			fprintf(stderr, "noise: unexpected record type %d\n", c->raw[0]);
+			return -1;
+		}
+		if (c->rawlen < flen)
+			break;
+		pl = flen - 3 - 16;
+		if (c->h2len + pl > c->h2cap)
+			c->h2in = realloc(c->h2in, c->h2cap = c->h2len + pl + 65536);
+		mknonce(nonce, c->rxn++);
+		if (tc_aead_open(c->h2in + c->h2len, c->rxk, nonce, c->raw + 3, flen - 3, NULL, 0)) {
+			fprintf(stderr, "noise: decrypt failed\n");
+			return -1;
+		}
+		c->h2len += pl;
+		memmove(c->raw, c->raw + flen, c->rawlen - flen);
+		c->rawlen -= flen;
 	}
 	return 0;
 }
@@ -225,22 +209,17 @@ int ctrl_connect(ctrl *c, const char *host, int port, int capver, const uint8_t 
 	printf("ts2021: Noise IK handshake complete\n");
 
 	/* Optional early payload: "\xff\xff\xffTS" + BE32 length + JSON. */
-	{
-		uint8_t hdr[9];
-		if (noise_read(c, hdr, 9))
+	while (c->h2len < 9)
+		if (feed(c, 10000))
 			return -1;
-		if (memcmp(hdr, "\xff\xff\xffTS", 5) == 0) {
-			uint32_t n = get_be32(hdr + 5);
-			char *j = malloc(n + 1);
-			if (!j || noise_read(c, (uint8_t *)j, n))
+	if (memcmp(c->h2in, "\xff\xff\xffTS", 5) == 0) {
+		uint32_t n = get_be32(c->h2in + 5);
+		while (c->h2len < 9 + (size_t)n)
+			if (feed(c, 10000))
 				return -1;
-			j[n] = 0;
-			printf("ts2021: early payload %s\n", j);
-			free(j);
-		} else {
-			/* It was the first HTTP/2 frame header: push it back. */
-			c->ptoff -= 9;
-		}
+		printf("ts2021: early payload %.*s\n", (int)n, c->h2in + 9);
+		memmove(c->h2in, c->h2in + 9 + n, c->h2len - 9 - n);
+		c->h2len -= 9 + n;
 	}
 
 	/* HTTP/2 preface + SETTINGS(INITIAL_WINDOW_SIZE=16M) + conn WINDOW_UPDATE. */
@@ -292,48 +271,27 @@ static int h2_frame(ctrl *c, uint8_t type, uint8_t flags, uint32_t sid, const vo
 	return r;
 }
 
-int ctrl_post(ctrl *c, const char *path, const char *body, size_t len, char **out, size_t *outlen)
+static ctrl_stream *find_stream(ctrl *c, uint32_t sid)
 {
-	uint8_t hb[512];
-	char auth[160], clen[24];
-	size_t o = 0, cap = 65536, n = 0;
-	uint32_t sid = c->next_stream;
-	char *buf = malloc(cap);
-	int status = -1;
+	int i;
+	for (i = 0; i < CTRL_MAX_STREAMS; i++)
+		if (c->st[i].sid == sid && sid)
+			return &c->st[i];
+	return NULL;
+}
 
-	c->next_stream += 2;
-	snprintf(auth, sizeof auth, "%s:%d", c->host, c->port);
-	snprintf(clen, sizeof clen, "%u", (unsigned)len);
-	o += hpack_lit(hb + o, ":method", "POST");
-	o += hpack_lit(hb + o, ":scheme", "http");
-	o += hpack_lit(hb + o, ":path", path);
-	o += hpack_lit(hb + o, ":authority", auth);
-	o += hpack_lit(hb + o, "content-type", "application/json");
-	o += hpack_lit(hb + o, "content-length", clen);
-	if (h2_frame(c, 1, 0x4, sid, hb, o))
-		return -1;
-	{
-		size_t off = 0;
-		while (off < len) {
-			size_t ch = len - off > 16384 ? 16384 : len - off;
-			if (h2_frame(c, 0, off + ch == len ? 1 : 0, sid, body + off, ch))
-				return -1;
-			off += ch;
-		}
-	}
-
-	for (;;) {
-		uint8_t fh[9], *p;
-		uint32_t fl, fsid;
-		if (noise_read(c, fh, 9))
+/* Parses all complete frames in h2in. */
+static void h2_process(ctrl *c)
+{
+	size_t off = 0;
+	while (c->h2len - off >= 9) {
+		uint8_t *fh = c->h2in + off, *p = fh + 9;
+		uint32_t fl = get_be24(fh), sid = get_be32(fh + 5) & 0x7fffffff;
+		ctrl_stream *s;
+		if (c->h2len - off < 9 + fl)
 			break;
-		fl = get_be24(fh);
-		fsid = get_be32(fh + 5) & 0x7fffffff;
-		p = malloc(fl + 1);
-		if (fl && noise_read(c, p, fl)) {
-			free(p);
-			break;
-		}
+		off += 9 + fl;
+		s = find_stream(c, sid);
 		switch (fh[3]) {
 		case 4: /* SETTINGS */
 			if (!(fh[4] & 1))
@@ -345,57 +303,132 @@ int ctrl_post(ctrl *c, const char *path, const char *body, size_t len, char **ou
 			break;
 		case 7: /* GOAWAY */
 			fprintf(stderr, "h2: GOAWAY code %u\n", fl >= 8 ? get_be32(p + 4) : 0);
-			free(p);
-			goto done;
+			c->dead = 1;
+			break;
 		case 3: /* RST_STREAM */
-			if (fsid == sid) {
-				fprintf(stderr, "h2: RST_STREAM code %u\n", fl >= 4 ? get_be32(p) : 0);
-				free(p);
-				goto done;
+			if (s) {
+				fprintf(stderr, "h2: RST_STREAM %u code %u\n", sid, fl >= 4 ? get_be32(p) : 0);
+				s->done = 1;
 			}
 			break;
-		case 1: /* HEADERS: we do not decode HPACK; 0x88 = indexed ":status: 200" */
-			if (fsid == sid) {
-				status = (fl && p[(fh[4] & 0x20) ? 5 : 0] == 0x88) ? 0 : 1;
-				if (status)
-					fprintf(stderr, "h2: non-200 response (first hpack byte 0x%02x)\n", p[0]);
-				if (fh[4] & 1) {
-					free(p);
-					goto done;
-				}
+		case 1: /* HEADERS: not decoded; 0x88 = indexed ":status: 200" */
+			if (s) {
+				s->status = (fl && p[(fh[4] & 0x20) ? 5 : 0] == 0x88) ? 0 : 1;
+				if (fh[4] & 1)
+					s->done = 1;
 			}
 			break;
 		case 0: /* DATA */
-			if (fsid == sid) {
+			if (fl) {
 				uint8_t wu[4];
+				put_be32(wu, fl);
+				h2_frame(c, 8, 0, 0, wu, 4);
+				if (s && !(fh[4] & 1))
+					h2_frame(c, 8, 0, sid, wu, 4);
+			}
+			if (s) {
 				size_t pad = (fh[4] & 8) ? p[0] + 1u : 0, dl = fl - pad;
 				const uint8_t *d = p + ((fh[4] & 8) ? 1 : 0);
-				while (n + dl + 1 > cap)
-					buf = realloc(buf, cap *= 2);
-				memcpy(buf + n, d, dl);
-				n += dl;
-				if (fl) {
-					put_be32(wu, fl);
-					h2_frame(c, 8, 0, 0, wu, 4);
-					if (!(fh[4] & 1))
-						h2_frame(c, 8, 0, sid, wu, 4);
-				}
-				if ((fh[4] & 1) || (c->stop_after_msg && n >= 4 && n >= 4 + get_le32((uint8_t *)buf))) {
-					free(p);
-					goto done;
-				}
+				while (s->len + dl + 1 > s->cap)
+					s->buf = realloc(s->buf, s->cap = s->cap ? s->cap * 2 : 65536);
+				memcpy(s->buf + s->len, d, dl);
+				s->len += dl;
+				if (fh[4] & 1)
+					s->done = 1;
 			}
 			break;
 		default:
 			break;
 		}
-		free(p);
 	}
-done:
-	buf[n] = 0;
-	*out = buf;
-	*outlen = n;
-	return status == 0 ? 0 : -1;
+	memmove(c->h2in, c->h2in + off, c->h2len - off);
+	c->h2len -= off;
+}
+
+static int pump(ctrl *c, int timeout_ms)
+{
+	if (feed(c, timeout_ms) < 0) {
+		c->dead = 1;
+		return -1;
+	}
+	h2_process(c);
+	return c->dead ? -1 : 0;
+}
+
+int ctrl_on_readable(ctrl *c) { return pump(c, 0); }
+
+uint32_t ctrl_open(ctrl *c, const char *path, const char *body, size_t len)
+{
+	uint8_t hb[512];
+	char auth[160], clen[24];
+	size_t o = 0, off = 0;
+	uint32_t sid = c->next_stream;
+	ctrl_stream *s = find_stream(c, 0);
+	int i;
+
+	for (i = 0; i < CTRL_MAX_STREAMS && !s; i++)
+		if (!c->st[i].sid)
+			s = &c->st[i];
+	if (!s)
+		return 0;
+	memset(s, 0, sizeof *s);
+	s->sid = sid;
+	s->status = -1;
+	c->next_stream += 2;
+	snprintf(auth, sizeof auth, "%s:%d", c->host, c->port);
+	snprintf(clen, sizeof clen, "%u", (unsigned)len);
+	o += hpack_lit(hb + o, ":method", "POST");
+	o += hpack_lit(hb + o, ":scheme", "http");
+	o += hpack_lit(hb + o, ":path", path);
+	o += hpack_lit(hb + o, ":authority", auth);
+	o += hpack_lit(hb + o, "content-type", "application/json");
+	o += hpack_lit(hb + o, "content-length", clen);
+	if (h2_frame(c, 1, 0x4, sid, hb, o))
+		return 0;
+	while (off < len) {
+		size_t ch = len - off > 16384 ? 16384 : len - off;
+		if (h2_frame(c, 0, off + ch == len ? 1 : 0, sid, body + off, ch))
+			return 0;
+		off += ch;
+	}
+	return sid;
+}
+
+int ctrl_post(ctrl *c, const char *path, const char *body, size_t len, char **out, size_t *outlen)
+{
+	uint32_t sid = ctrl_open(c, path, body, len);
+	ctrl_stream *s = find_stream(c, sid);
+	int st;
+	if (!s)
+		return -1;
+	while (!s->done && pump(c, 15000) == 0)
+		;
+	if (!s->buf)
+		s->buf = malloc(1);
+	s->buf[s->len] = 0;
+	*out = s->buf;
+	*outlen = s->len;
+	st = s->status;
+	memset(s, 0, sizeof *s);
+	return st == 0 ? 0 : -1;
+}
+
+char *ctrl_next_msg(ctrl *c, uint32_t sid)
+{
+	ctrl_stream *s = find_stream(c, sid);
+	uint32_t n;
+	char *m;
+	if (!s || s->len < 4)
+		return NULL;
+	n = get_le32((uint8_t *)s->buf);
+	if (s->len < 4 + (size_t)n)
+		return NULL;
+	m = malloc(n + 1);
+	memcpy(m, s->buf + 4, n);
+	m[n] = 0;
+	memmove(s->buf, s->buf + 4 + n, s->len - 4 - n);
+	s->len -= 4 + n;
+	return m;
 }
 
 void ctrl_close(ctrl *c)

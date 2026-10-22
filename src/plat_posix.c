@@ -11,6 +11,9 @@
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>
@@ -68,6 +71,52 @@ int plat_recv(int s, void *buf, size_t len, int timeout_ms)
 }
 
 void plat_close(int s) { close(s); }
+
+int plat_send_some(int s, const void *buf, size_t len)
+{
+	ssize_t n = send(s, buf, len, MSG_DONTWAIT | MSG_NOSIGNAL);
+	if (n < 0)
+		return (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) ? 0 : -1;
+	return (int)n;
+}
+
+int plat_tcp_listen_local(int port)
+{
+	struct sockaddr_in a;
+	int one = 1, s = socket(AF_INET, SOCK_STREAM, 0);
+	if (s < 0)
+		return -1;
+	setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+	memset(&a, 0, sizeof a);
+	a.sin_family = AF_INET;
+	a.sin_port = htons((uint16_t)port);
+	a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	if (bind(s, (struct sockaddr *)&a, sizeof a) || listen(s, 16)) {
+		close(s);
+		return -1;
+	}
+	return s;
+}
+
+int plat_accept(int ls) { return accept(ls, NULL, NULL); }
+
+int plat_poll(plat_pollent *e, int n, int timeout_ms)
+{
+	struct pollfd p[64];
+	int i, r;
+	if (n > 64)
+		n = 64;
+	for (i = 0; i < n; i++) {
+		p[i].fd = e[i].sock;
+		p[i].events = (short)(((e[i].want & PLAT_RD) ? POLLIN : 0) | ((e[i].want & PLAT_WR) ? POLLOUT : 0));
+		p[i].revents = 0;
+	}
+	r = poll(p, (nfds_t)n, timeout_ms);
+	for (i = 0; i < n; i++)
+		e[i].got = (short)(((p[i].revents & (POLLIN | POLLHUP | POLLERR)) ? PLAT_RD : 0) |
+				   ((p[i].revents & POLLOUT) ? PLAT_WR : 0));
+	return r < 0 ? 0 : r;
+}
 
 int plat_random(void *buf, size_t len)
 {

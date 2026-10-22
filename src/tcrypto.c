@@ -147,6 +147,25 @@ size_t tc_box_seal(uint8_t *out, const void *msg, size_t len, const uint8_t peer
 	return 24 + n - crypto_box_BOXZEROBYTES;
 }
 
+int tc_box_open(uint8_t *out, const uint8_t *in, size_t len, const uint8_t peer_pub[32], const uint8_t my_priv[32])
+{
+	size_t n;
+	unsigned char *c, *m;
+	int r;
+	if (len < 40)
+		return -1;
+	n = len - 24 + crypto_box_BOXZEROBYTES;
+	c = calloc(1, n);
+	m = calloc(1, n);
+	memcpy(c + crypto_box_BOXZEROBYTES, in + 24, len - 24);
+	r = crypto_box_open(m, c, n, in, peer_pub, my_priv);
+	if (r == 0)
+		memcpy(out, m + crypto_box_ZEROBYTES, n - crypto_box_ZEROBYTES);
+	free(c);
+	free(m);
+	return r ? -1 : 0;
+}
+
 void tc_hex(char *out, const uint8_t *in, size_t n)
 {
 	static const char h[] = "0123456789abcdef";

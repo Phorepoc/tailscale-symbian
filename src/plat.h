@@ -17,6 +17,23 @@ int plat_send_all(int s, const void *buf, size_t len);
  * Returns bytes read, 0 on timeout, -1 on error/EOF. */
 int plat_recv(int s, void *buf, size_t len, int timeout_ms);
 void plat_close(int s);
+/* Non-blocking send: bytes accepted (0 = would block), -1 on error. */
+int plat_send_some(int s, const void *buf, size_t len);
+
+/* Listening TCP socket on 127.0.0.1:port (local proxy front-ends). */
+int plat_tcp_listen_local(int port);
+/* Accepts one pending connection, or -1. */
+int plat_accept(int ls);
+
+/* Readiness wait over a set of handles: the one blocking point of the event
+ * loop. want/got: PLAT_RD | PLAT_WR. Returns number ready, 0 on timeout. */
+#define PLAT_RD 1
+#define PLAT_WR 2
+typedef struct {
+	int sock;
+	short want, got;
+} plat_pollent;
+int plat_poll(plat_pollent *ents, int n, int timeout_ms);
 
 /* Cryptographically secure random bytes; 0 on success. */
 int plat_random(void *buf, size_t len);

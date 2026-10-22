@@ -32,6 +32,9 @@ int tc_aead_open(uint8_t *out, const uint8_t key[32], const uint8_t nonce12[12],
 size_t tc_box_seal(uint8_t *out, const void *msg, size_t len,
 		   const uint8_t peer_pub[32], const uint8_t my_priv[32]);
 
+/* Opens a NaCl box laid out as above (nonce || tag || ct); out gets len-40 bytes. 0 = ok. */
+int tc_box_open(uint8_t *out, const uint8_t *in, size_t len, const uint8_t peer_pub[32], const uint8_t my_priv[32]);
+
 void tc_hex(char *out, const uint8_t *in, size_t n);
 int tc_unhex(uint8_t *out, const char *in, size_t n);
 
