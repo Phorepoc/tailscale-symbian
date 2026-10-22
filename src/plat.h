@@ -9,6 +9,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Process setup: log redirection, network selection, RNG seeding. 0 = ok. */
+int plat_init(int argc, char **argv);
+
 /* Opaque TCP stream handle; negative = error. */
 int plat_tcp_connect(const char *host, int port);
 /* Write all bytes; 0 on success, -1 on error. */

@@ -63,6 +63,17 @@ What a port must provide (`plat.h`):
 
 The state file uses stdio (`fopen`), available in Open C.
 
+## Symbian (Open C)
+
+`group/phetaild.mmp` builds `phetaild.exe`, an Open C console exe (`libcrt0` +
+`libc`, CAPABILITY NetworkServices LocalServices) with `src/plat_symbian.cpp`:
+BSD sockets + `select` for the loop, `TTime`/`NTickCount` for time, and a
+BLAKE2s pool over `Math::Random`, the fast counter, the clock and a persisted
+seed for randomness. It logs to `C:\data\phetail\phetaild.log` and selects
+the access point named in `C:\data\phetail\iap.txt` (default "ASUS") with
+`setdefaultif`. Next step: native `RSocket` active objects + a `CPeriodic`
+tick instead of `select`.
+
 ## Not yet
 
 Disco CallMeMaybe and direct UDP paths, WireGuard replay window and

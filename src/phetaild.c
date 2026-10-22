@@ -95,6 +95,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s <host> <port> <authkey> [statefile] [socks-port]\n", argv[0]);
 		return 2;
 	}
+	if (plat_init(argc, argv))
+		return 1;
 	setvbuf(stdout, NULL, _IOLBF, 0);
 	host = argv[1];
 	port = atoi(argv[2]);

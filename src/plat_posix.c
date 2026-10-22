@@ -18,6 +18,13 @@
 #include <time.h>
 #include <unistd.h>
 
+int plat_init(int argc, char **argv)
+{
+	(void)argc;
+	(void)argv;
+	return 0;
+}
+
 int plat_tcp_connect(const char *host, int port)
 {
 	struct addrinfo hints, *res, *ai;

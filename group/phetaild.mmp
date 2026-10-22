@@ -1,0 +1,38 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+//
+// phetaild for Symbian (Open C console exe). Logs to C:\data\phetail\phetaild.log.
+TARGET			phetaild.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7016B60
+SECUREID		0xE7016B60
+VENDORID		0
+CAPABILITY		NetworkServices LocalServices
+
+EPOCHEAPSIZE	0x100000 0x2000000
+EPOCSTACKSIZE	0x14000
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+USERINCLUDE		../src ../src/lwipport ../vendor/lwip/include
+
+SOURCEPATH		../src
+SOURCE			phetaild.c ctrl.c netmap.c derp.c wg.c disco.c tunnel.c socks.c tcrypto.c util.c
+SOURCE			plat_symbian.cpp
+SOURCEPATH		../vendor/monocypher
+SOURCE			monocypher.c
+SOURCEPATH		../vendor/blake2s
+SOURCE			blake2s-ref.c
+SOURCEPATH		../vendor/tweetnacl
+SOURCE			tweetnacl.c
+SOURCEPATH		../vendor/lwip/core
+SOURCE			init.c def.c inet_chksum.c ip.c mem.c memp.c netif.c pbuf.c stats.c sys.c
+SOURCE			tcp.c tcp_in.c tcp_out.c timeouts.c udp.c raw.c dns.c
+SOURCEPATH		../vendor/lwip/core/ipv4
+SOURCE			icmp.c ip4.c ip4_addr.c ip4_frag.c etharp.c dhcp.c autoip.c acd.c igmp.c
+
+STATICLIBRARY	libcrt0.lib
+LIBRARY			libc.lib
+LIBRARY			euser.lib hal.lib
+
+SMPSAFE
