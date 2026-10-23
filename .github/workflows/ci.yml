@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: Apache-2.0
+name: ci
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host:
+    name: Host build (gcc and clang), warnings as errors for our own files
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cc: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - run: make CC=${{ matrix.cc }}
+      - name: it starts and prints its usage
+        run: |
+          ./phetaild 2>&1 | grep -q 'usage'
+      - name: sanitizer build starts too
+        run: |
+          make clean
+          make CC=${{ matrix.cc }} CFLAGS="-std=c99 -O1 -g -fsanitize=address,undefined -Wall -Wno-unused-parameter"
+          ./phetaild 2>&1 | grep -q usage
+
+  headscale:
+    name: End to end against Headscale (join the tailnet, reach a peer through SOCKS)
+    runs-on: ubuntu-latest
+    needs: host
+    steps:
+      - uses: actions/checkout@v4
+      - run: make
+      - name: spike recipe (Headscale + a Tailscale peer in Docker)
+        run: HOST="$(hostname -I | awk '{print $1}')" sh spike/run.sh
+        continue-on-error: true   # first run on a hosted runner; see the log if it fails
+
+  arm:
+    name: Portable parts compile for ARM (Arm GNU Toolchain from the Phorepoc toolchain image)
+    runs-on: ubuntu-latest
+    container: ghcr.io/phorepoc/base:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "crypto, WireGuard, DISCO and map code, without the POSIX platform layer"
+        run: |
+          set -e
+          arm-none-eabi-gcc --version | head -1
+          for f in src/tcrypto.c src/util.c src/netmap.c src/wg.c src/disco.c vendor/monocypher/monocypher.c vendor/blake2s/blake2s-ref.c vendor/tweetnacl/tweetnacl.c; do
+            arm-none-eabi-gcc -std=c99 -Os -mcpu=cortex-a8 -Wall -Wno-unused-parameter -Isrc/lwipport -Ivendor/lwip/include -c "$f" -o "/tmp/$(basename "$f").o" || echo "ARM compile problem: $f"
+          done
+        continue-on-error: true

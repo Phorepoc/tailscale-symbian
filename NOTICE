@@ -1,0 +1,15 @@
+phetail
+Copyright The Phorepoc Authors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE). Our own files carry an SPDX-License-Identifier header.
+
+Vendored third-party code, unmodified and with its own licence files (see vendor/README.md; no GPL):
+- monocypher 4.0.2 (X25519, ChaCha20, Poly1305): BSD-2-Clause or CC0-1.0
+- BLAKE2s reference implementation: CC0-1.0 (also OpenSSL / Apache-2.0 at your option)
+- jsmn (JSON tokenizer): MIT
+- lwIP 2.2.0 (core and headers): BSD-3-Clause
+- TweetNaCl (crypto_box): public domain
+
+Optional TLS (build flag -DPHETAIL_TLS): links mbedTLS 3.6 (Apache-2.0 OR GPL-2.0-or-later; used under Apache-2.0), which is not included here.
+The spike recipes (spike/) start Headscale (BSD-3-Clause) and the official Tailscale container image (BSD-3-Clause) as separate programs.
+phetail speaks the Tailscale protocol; Tailscale is a trademark of its owner and this project is not affiliated with it.
