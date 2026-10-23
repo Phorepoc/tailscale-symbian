@@ -27,7 +27,7 @@ typedef struct {
 	int remote_closed;
 } client;
 
-static client cl[MAX_CLIENTS];
+static client clients[MAX_CLIENTS];
 static int listen_sock = -1;
 
 static void drop(client *c)
@@ -199,7 +199,7 @@ int socks_listen(int port)
 {
 	int i;
 	for (i = 0; i < MAX_CLIENTS; i++)
-		cl[i].sock = -1;
+		clients[i].sock = -1;
 	listen_sock = plat_tcp_listen_local(port);
 	if (listen_sock >= 0)
 		printf("socks: listening on 127.0.0.1:%d\n", port);
@@ -214,7 +214,7 @@ int socks_poll_set(plat_pollent *e, int max)
 	e[n].sock = listen_sock;
 	e[n++].want = PLAT_RD;
 	for (i = 0; i < MAX_CLIENTS && n < max; i++) {
-		client *c = &cl[i];
+		client *c = &clients[i];
 		if (c->state == S_FREE)
 			continue;
 		e[n].sock = c->sock;
@@ -237,10 +237,10 @@ void socks_handle(const plat_pollent *e, int n)
 		if (e[i].sock == listen_sock) {
 			int s = plat_accept(listen_sock);
 			for (j = 0; j < MAX_CLIENTS && s >= 0; j++)
-				if (cl[j].state == S_FREE) {
-					memset(&cl[j], 0, sizeof cl[j]);
-					cl[j].sock = s;
-					cl[j].state = S_GREET;
+				if (clients[j].state == S_FREE) {
+					memset(&clients[j], 0, sizeof clients[j]);
+					clients[j].sock = s;
+					clients[j].state = S_GREET;
 					s = -1;
 				}
 			if (s >= 0)
@@ -248,8 +248,8 @@ void socks_handle(const plat_pollent *e, int n)
 			continue;
 		}
 		for (j = 0; j < MAX_CLIENTS; j++)
-			if (cl[j].state != S_FREE && cl[j].sock == e[i].sock && (e[i].got & PLAT_RD))
-				on_client_data(&cl[j]);
+			if (clients[j].state != S_FREE && clients[j].sock == e[i].sock && (e[i].got & PLAT_RD))
+				on_client_data(&clients[j]);
 	}
 }
 
@@ -257,7 +257,7 @@ void socks_flush(void)
 {
 	int i;
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		client *c = &cl[i];
+		client *c = &clients[i];
 		if (c->state == S_FREE)
 			continue;
 		if (c->outlen) {

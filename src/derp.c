@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "net.h"
 #include "plat.h"
 #include "tail.h"
 #include "tcrypto.h"
@@ -25,8 +26,8 @@ static int send_frame(uint8_t type, const void *a, size_t alen, const void *b, s
 		return -1;
 	h[0] = type;
 	put_be32(h + 1, (uint32_t)(alen + blen));
-	if (plat_send_all(d.sock, h, 5) || (alen && plat_send_all(d.sock, a, alen)) ||
-	    (blen && plat_send_all(d.sock, b, blen)))
+	if (net_send_all(d.sock, h, 5) || (alen && net_send_all(d.sock, a, alen)) ||
+	    (blen && net_send_all(d.sock, b, blen)))
 		return -1;
 	return 0;
 }
@@ -59,7 +60,7 @@ static void consume(size_t used)
 
 static int fill(int timeout_ms)
 {
-	int r = plat_recv(d.sock, d.buf + d.len, sizeof d.buf - d.len, timeout_ms);
+	int r = net_recv(d.sock, d.buf + d.len, sizeof d.buf - d.len, timeout_ms);
 	if (r < 0)
 		return -1;
 	d.len += (size_t)r;
@@ -85,12 +86,12 @@ int derp_connect(const char *host, int port)
 	int t;
 
 	d.len = 0;
-	d.sock = plat_tcp_connect(host, port);
+	d.sock = net_connect(host, port);
 	if (d.sock < 0)
 		return -1;
 	snprintf(req, sizeof req, "GET /derp HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: DERP\r\nConnection: Upgrade\r\n\r\n",
 		 host, port);
-	plat_send_all(d.sock, req, strlen(req));
+	net_send_all(d.sock, req, strlen(req));
 	for (;;) {
 		if (fill(10000) <= 0 || d.len >= sizeof d.buf - 1)
 			return -1;
@@ -126,6 +127,14 @@ int derp_connect(const char *host, int port)
 
 int derp_sock(void) { return d.sock; }
 
+void derp_close(void)
+{
+	if (d.sock >= 0)
+		net_close(d.sock);
+	d.sock = -1;
+	d.len = 0;
+}
+
 int derp_on_readable(void)
 {
 	const uint8_t *p;
@@ -133,7 +142,7 @@ int derp_on_readable(void)
 	int t;
 	if (fill(0) < 0) {
 		fprintf(stderr, "derp: connection lost\n");
-		plat_close(d.sock);
+		net_close(d.sock);
 		d.sock = -1;
 		return -1;
 	}

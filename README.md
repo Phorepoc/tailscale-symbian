@@ -79,3 +79,15 @@ tick instead of `select`.
 Disco CallMeMaybe and direct UDP paths, WireGuard replay window and
 cookie replies, PeersChangedPatch / PeersRemoved handling, control reconnect,
 TLS (https control and DERP), zstd maps, DNS beyond peer names, IPv6.
+
+## Stage 2 (reconnect, TLS, SOCKS on the device)
+- **Reconnect.** `phetaild` runs control + DERP as a session; when either connection drops (or the control stream is silent for
+  3 minutes) it closes both, waits 1 s, 2 s, 4 s ... 30 s (back to 1 s after a session that ran for 30 s) and registers again.
+  WireGuard state of peers that stay in the new map is kept; SOCKS clients stay connected to the local listener.
+- **TLS.** `--tls-pin <64 hex>` makes the control (`/key`, ts2021) and DERP connections go over TLS 1.2/1.3 (mbedTLS 3.6, built
+  with `-DPHETAIL_TLS`, see `src/net.c`); the server certificate must match the SHA-256 of its DER encoding (no chain
+  validation, no insecure mode). Put a TLS terminator (Caddy `reverse_proxy`) in front of Headscale.
+- **SOCKS.** The existing SOCKS5 front-end on 127.0.0.1 (default port 1055) is what other applications on the device use;
+  `socksget` (`group/socksget.mmp`) is a small test client.
+- **Arguments from a file.** `--args <file>` (whitespace separated) for launchers with a short command-line limit.
+- mbedTLS sources are expected at `../phedav/.deps/mbedtls` (see the phedav repo's fetch).

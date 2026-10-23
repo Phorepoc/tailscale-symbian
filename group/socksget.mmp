@@ -1,0 +1,25 @@
+// Copyright The Phorepoc Authors
+// SPDX-License-Identifier: Apache-2.0
+//
+// socksget for Symbian (Open C console exe): a SOCKS5 test client for phetaild's front-end.
+TARGET			socksget.exe
+TARGETTYPE		exe
+UID				0x1000007a 0xE7016B62
+SECUREID		0xE7016B62
+VENDORID		0
+CAPABILITY		NetworkServices LocalServices
+
+EPOCHEAPSIZE	0x10000 0x400000
+EPOCSTACKSIZE	0x14000
+
+OS_LAYER_SYSTEMINCLUDE_SYMBIAN
+OS_LAYER_LIBC_SYSTEMINCLUDE
+
+SOURCEPATH		../src
+SOURCE			socksget.c
+
+STATICLIBRARY	libcrt0.lib
+LIBRARY			libc.lib
+LIBRARY			euser.lib
+
+SMPSAFE

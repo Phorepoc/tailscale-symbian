@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "net.h"
 #include "plat.h"
 #include "tcrypto.h"
 #include "util.h"
@@ -24,7 +25,7 @@ static int read_http_head(int s, char *buf, size_t cap, size_t *got)
 		int r;
 		if (n + 1 >= cap)
 			return -1;
-		r = plat_recv(s, buf + n, cap - 1 - n, 10000);
+		r = net_recv(s, buf + n, cap - 1 - n, 10000);
 		if (r <= 0)
 			return -1;
 		n += (size_t)r;
@@ -41,16 +42,16 @@ int ctrl_fetch_key(const char *host, int port, int capver, uint8_t server_pub[32
 {
 	char req[256], resp[4096], *k;
 	size_t n = 0;
-	int s = plat_tcp_connect(host, port), r;
+	int s = net_connect(host, port), r;
 	if (s < 0)
 		return -1;
 	snprintf(req, sizeof req, "GET /key?v=%d HTTP/1.1\r\nHost: %s:%d\r\nConnection: close\r\n\r\n", capver, host,
 		 port);
-	plat_send_all(s, req, strlen(req));
-	while (n < sizeof resp - 1 && (r = plat_recv(s, resp + n, sizeof resp - 1 - n, 10000)) > 0)
+	net_send_all(s, req, strlen(req));
+	while (n < sizeof resp - 1 && (r = net_recv(s, resp + n, sizeof resp - 1 - n, 10000)) > 0)
 		n += (size_t)r;
 	resp[n] = 0;
-	plat_close(s);
+	net_close(s);
 	k = strstr(resp, "\"publicKey\":\"mkey:");
 	if (!k)
 		return -1;
@@ -76,7 +77,7 @@ static int noise_write(ctrl *c, const uint8_t *p, size_t len)
 		put_be16(frame + 1, (uint16_t)(chunk + 16));
 		mknonce(nonce, c->txn++);
 		tc_aead_seal(frame + 3, c->txk, nonce, p, chunk, NULL, 0);
-		if (plat_send_all(c->sock, frame, chunk + 19))
+		if (net_send_all(c->sock, frame, chunk + 19))
 			return -1;
 		p += chunk;
 		len -= chunk;
@@ -90,7 +91,7 @@ static int feed(ctrl *c, int timeout_ms)
 {
 	uint8_t nonce[12];
 	if (!(c->rawlen >= 3 && c->rawlen >= 3u + get_be16(c->raw + 1))) {
-		int r = plat_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, timeout_ms);
+		int r = net_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, timeout_ms);
 		if (r < 0)
 			return -1;
 		c->rawlen += (size_t)r;
@@ -172,10 +173,10 @@ int ctrl_connect(ctrl *c, const char *host, int port, int capver, const uint8_t 
 		 "POST /ts2021 HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: tailscale-control-protocol\r\n"
 		 "Connection: upgrade\r\nX-Tailscale-Handshake: %s\r\nContent-Length: 0\r\n\r\n",
 		 host, port, b64);
-	c->sock = plat_tcp_connect(host, port);
+	c->sock = net_connect(host, port);
 	if (c->sock < 0)
 		return -1;
-	plat_send_all(c->sock, req, strlen(req));
+	net_send_all(c->sock, req, strlen(req));
 	hl = read_http_head(c->sock, head, sizeof head, &got);
 	if (hl < 0 || strncmp(head, "HTTP/1.1 101", 12) != 0) {
 		fprintf(stderr, "ts2021: upgrade refused:\n%s\n", hl < 0 ? "(no response)" : head);
@@ -185,7 +186,7 @@ int ctrl_connect(ctrl *c, const char *host, int port, int capver, const uint8_t 
 	memcpy(c->raw, head + hl, got - (size_t)hl);
 	c->rawlen = got - (size_t)hl;
 	while (c->rawlen < 51) {
-		int r = plat_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, 10000);
+		int r = net_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, 10000);
 		if (r <= 0)
 			return -1;
 		c->rawlen += (size_t)r;
@@ -434,6 +435,6 @@ char *ctrl_next_msg(ctrl *c, uint32_t sid)
 void ctrl_close(ctrl *c)
 {
 	if (c->sock >= 0)
-		plat_close(c->sock);
+		net_close(c->sock);
 	c->sock = -1;
 }
