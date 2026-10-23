@@ -8,7 +8,7 @@ set -e
 HOST=${HOST:?set HOST to this box's IP}
 HS=${HS:-headscale/headscale:v0.29.5}
 mkdir -p hs/config hs/data
-sed "s/192.168.2.247/$HOST/g" "$(dirname "$0")/headscale-config.yaml" > hs/config/config.yaml
+sed "s/__HOST__/$HOST/g" "$(dirname "$0")/headscale-config.yaml" > hs/config/config.yaml
 docker run -d --name phe-headscale --cpus 1 --memory 1g -p 18080:18080 -p 3478:3478/udp \
 	-v "$PWD/hs/config:/etc/headscale" -v "$PWD/hs/data:/var/lib/headscale" "$HS" serve
 sleep 5

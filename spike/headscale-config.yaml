@@ -1,5 +1,5 @@
 # headscale v0.29.5 config used by the S0/S1 spike (server_url = the spike box)
-server_url: http://192.168.2.247:18080
+server_url: http://__HOST__:18080
 listen_addr: 0.0.0.0:18080
 metrics_listen_addr: 127.0.0.1:19090
 grpc_listen_addr: 127.0.0.1:50443
@@ -18,7 +18,7 @@ derp:
     stun_listen_addr: 0.0.0.0:3478
     private_key_path: /var/lib/headscale/derp_server_private.key
     automatically_add_embedded_derp_region: true
-    ipv4: 192.168.2.247
+    ipv4: __HOST__
   urls: []
   paths: []
   auto_update_enabled: false
