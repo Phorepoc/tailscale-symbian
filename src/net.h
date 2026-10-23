@@ -15,7 +15,8 @@
 int net_set_tls(const uint8_t pin[32]);
 int net_connect(const char *host, int port);
 int net_send_all(int s, const void *buf, size_t len);
-/* like plat_recv: bytes, 0 = timeout, -1 = error / EOF */
+/* bytes read (> 0); 0 = EOF (peer closed); NET_TIMEOUT (-2) = nothing within timeout_ms; -1 = error */
+#define NET_TIMEOUT (-2)
 int net_recv(int s, void *buf, size_t len, int timeout_ms);
 void net_close(int s);
 /* 1 if decrypted bytes are waiting although the socket itself is not readable */

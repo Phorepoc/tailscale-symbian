@@ -3,6 +3,7 @@
 #include "net.h"
 
 #include <stdio.h>
+#include "log.h"
 #include <string.h>
 
 #include "plat.h"
@@ -12,7 +13,11 @@
 int net_set_tls(const uint8_t pin[32]) { (void)pin; return -1; }
 int net_connect(const char *host, int port) { return plat_tcp_connect(host, port); }
 int net_send_all(int s, const void *buf, size_t len) { return plat_send_all(s, buf, len); }
-int net_recv(int s, void *buf, size_t len, int timeout_ms) { return plat_recv(s, buf, len, timeout_ms); }
+int net_recv(int s, void *buf, size_t len, int timeout_ms)
+{
+	int r = plat_recv(s, buf, len, timeout_ms);
+	return r > 0 ? r : (r == 0 ? NET_TIMEOUT : 0);      /* plat_recv: 0 = timeout, -1 = EOF or error */
+}
 void net_close(int s) { plat_close(s); }
 int net_pending(int s) { (void)s; return 0; }
 
@@ -121,6 +126,7 @@ int net_connect(const char *host, int port)
 		goto fail;
 	mbedtls_ssl_conf_min_tls_version(&t->conf, MBEDTLS_SSL_VERSION_TLS1_2);
 	mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->drbg);
+	mbedtls_ssl_conf_session_tickets(&t->conf, MBEDTLS_SSL_SESSION_TICKETS_DISABLED);   /* the client keeps no tickets: discard them */
 	mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_NONE);   /* the pin replaces chain validation */
 	if (mbedtls_ssl_setup(&t->ssl, &t->conf) || mbedtls_ssl_set_hostname(&t->ssl, host))
 		goto fail;
@@ -173,20 +179,38 @@ int net_recv(int s, void *buf, size_t len, int timeout_ms)
 {
 	tlsconn *t = find(s);
 	plat_pollent pe;
-	int rc;
-	if (!t)
-		return plat_recv(s, buf, len, timeout_ms);
-	if (mbedtls_ssl_get_bytes_avail(&t->ssl) == 0) {
-		pe.sock = s; pe.want = PLAT_RD; pe.got = 0;
-		if (plat_poll(&pe, 1, timeout_ms) <= 0)
-			return 0;
+	uint64_t end = plat_ms() + (uint64_t)(timeout_ms < 0 ? 0 : timeout_ms);
+	if (!t) {
+		int r = plat_recv(s, buf, len, timeout_ms);
+		return r > 0 ? r : (r == 0 ? NET_TIMEOUT : 0);
 	}
-	rc = mbedtls_ssl_read(&t->ssl, (unsigned char *)buf, len);
-	if (rc > 0)
-		return rc;
-	if (rc == MBEDTLS_ERR_SSL_WANT_READ || rc == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
-		return 0;
-	return -1;
+	for (;;) {
+		int rc, left;
+		if (mbedtls_ssl_get_bytes_avail(&t->ssl) == 0) {
+			uint64_t now = plat_ms();
+			left = timeout_ms < 0 ? 1000 : (now >= end ? 0 : (int)(end - now));
+			pe.sock = s; pe.want = PLAT_RD; pe.got = 0;
+			if (plat_poll(&pe, 1, left) <= 0) {
+				if (timeout_ms < 0)
+					continue;
+				return NET_TIMEOUT;
+			}
+		}
+		rc = mbedtls_ssl_read(&t->ssl, (unsigned char *)buf, len);
+		if (rc > 0)
+			return rc;
+		if (rc == 0 || rc == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY)
+			return 0;                                    /* EOF */
+		/* not data: a TLS 1.3 NewSessionTicket / more bytes needed -- read on until data, EOF or the timeout */
+		if (rc == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET || rc == MBEDTLS_ERR_SSL_WANT_READ ||
+		    rc == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			if (timeout_ms >= 0 && plat_ms() >= end)
+				return NET_TIMEOUT;
+			continue;
+		}
+		fprintf(stderr, "net: TLS read failed: -0x%04x\n", (unsigned)-rc);
+		return -1;
+	}
 }
 
 void net_close(int s)

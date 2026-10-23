@@ -17,7 +17,7 @@ OS_LAYER_LIBC_SYSTEMINCLUDE
 MACRO			PHE_LOG_FILE
 
 SOURCEPATH		../src
-SOURCE			socksget.c
+SOURCE			socksget.c socksget_sym.cpp
 
 STATICLIBRARY	libcrt0.lib
 LIBRARY			libc.lib

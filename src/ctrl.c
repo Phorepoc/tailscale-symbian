@@ -97,8 +97,10 @@ static int feed(ctrl *c, int timeout_ms)
 	uint8_t nonce[12];
 	if (!(c->rawlen >= 3 && c->rawlen >= 3u + get_be16(c->raw + 1))) {
 		int r = net_recv(c->sock, c->raw + c->rawlen, sizeof c->raw - c->rawlen, timeout_ms);
-		if (r < 0)
-			return -1;
+		if (r == NET_TIMEOUT)
+			r = 0;
+		else if (r <= 0)
+			return -1;                  /* EOF or error */
 		c->rawlen += (size_t)r;
 	}
 	while (c->rawlen >= 3) {

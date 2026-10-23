@@ -16,6 +16,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#ifdef PHE_LOG_FILE
+void phe_trace(const char *line);
+#else
+#define phe_trace(x) ((void)0)
+#endif
+
 static int readn(int s, unsigned char *b, int n, int secs)
 {
 	int got = 0;
@@ -94,6 +100,17 @@ static int one_try(const char *host, int port, const char *path, int pport)
 		return -1;
 	}
 	printf("socksget: reply %d bytes: %.*s", total, total > 400 ? 400 : total, line);
+	{
+		char *body = strstr(line, "\r\n\r\n"), first[160];
+		int k = 0;
+		phe_trace(line);                      /* status line */
+		if (body) {
+			for (body += 4; *body && *body != 10 && *body != 13 && k < 150; body++)
+				first[k++] = *body;
+			first[k] = 0;
+			phe_trace(first);                 /* first line of the page body */
+		}
+	}
 	printf("\n");
 	return strncmp(line, "HTTP/", 5) == 0 ? 0 : -1;
 }

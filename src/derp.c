@@ -62,8 +62,10 @@ static void consume(size_t used)
 static int fill(int timeout_ms)
 {
 	int r = net_recv(d.sock, d.buf + d.len, sizeof d.buf - d.len, timeout_ms);
-	if (r < 0)
-		return -1;
+	if (r == NET_TIMEOUT)
+		return 0;
+	if (r <= 0)
+		return -1;                      /* EOF or error */
 	d.len += (size_t)r;
 	return r;
 }
