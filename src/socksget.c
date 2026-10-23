@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	int tries = 1, i, pport = 1055;
 	const char *path = "/";
 
-#ifdef __SYMBIAN32__
+#if defined(__SYMBIAN32__) || defined(PHE_LOG_FILE)
 	freopen("C:\data\phetail\socksget.log", "a", stdout);
 	setvbuf(stdout, NULL, _IOLBF, 0);
 #endif

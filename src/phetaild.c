@@ -25,6 +25,8 @@
 #define MAX_BACKOFF_MS 30000
 
 static int socks_up;
+static uint64_t g_stop_at;   /* --max-seconds: leave cleanly (stdio closed, the log is complete) */
+static int g_stop;
 
 tailstate g_tail;
 
@@ -192,6 +194,11 @@ static int session(const char *host, int port, const char *authkey, const uint8_
 			fprintf(stderr, "control stream silent for %d s: reconnecting\n", CTRL_SILENT_MS / 1000);
 			break;
 		}
+		if (g_stop_at && now >= g_stop_at) {
+			printf("max-seconds reached: leaving\n");
+			g_stop = 1;
+			break;
+		}
 		if (now - last_tick >= TICK_MS) {
 			last_tick = now;
 			tun_timers();
@@ -272,6 +279,8 @@ int main(int argc, char **argv)
 				fprintf(stderr, "this build has no TLS\n");
 				return 2;
 			}
+		} else if (strcmp(argv[i], "--max-seconds") == 0 && i + 1 < argc) {
+			g_stop_at = plat_ms() + (uint64_t)atoi(argv[++i]) * 1000;
 		} else if (strcmp(argv[i], "--max-sessions") == 0 && i + 1 < argc) {
 			max_sessions = atoi(argv[++i]);
 		} else if (npos < 8) {
@@ -296,6 +305,10 @@ int main(int argc, char **argv)
 		int r = session(host, port, authkey, machine, socks_port, &up);
 		sessions++;
 		(void)r;
+		if (g_stop) {
+			fflush(stdout);
+			return 0;
+		}
 		if (max_sessions && sessions >= max_sessions)
 			return 1;
 		if (up > 30000)
