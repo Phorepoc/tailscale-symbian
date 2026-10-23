@@ -38,6 +38,9 @@ typedef struct {
 } plat_pollent;
 int plat_poll(plat_pollent *ents, int n, int timeout_ms);
 
+/* Trace line to the platform's debug channel (serial port on Symbian, nothing on POSIX). */
+void plat_dbg(const char *line);
+
 /* Cryptographically secure random bytes; 0 on success. */
 int plat_random(void *buf, size_t len);
 /* Wall-clock time: seconds and nanoseconds since the Unix epoch. */

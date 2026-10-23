@@ -3,6 +3,7 @@
 #include "ctrl.h"
 
 #include <stdio.h>
+#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -43,8 +44,10 @@ int ctrl_fetch_key(const char *host, int port, int capver, uint8_t server_pub[32
 	char req[256], resp[4096], *k;
 	size_t n = 0;
 	int s = net_connect(host, port), r;
-	if (s < 0)
+	if (s < 0) {
+		fprintf(stderr, "key: cannot connect to %s:%d\n", host, port);
 		return -1;
+	}
 	snprintf(req, sizeof req, "GET /key?v=%d HTTP/1.1\r\nHost: %s:%d\r\nConnection: close\r\n\r\n", capver, host,
 		 port);
 	net_send_all(s, req, strlen(req));
@@ -53,8 +56,10 @@ int ctrl_fetch_key(const char *host, int port, int capver, uint8_t server_pub[32
 	resp[n] = 0;
 	net_close(s);
 	k = strstr(resp, "\"publicKey\":\"mkey:");
-	if (!k)
+	if (!k) {
+		fprintf(stderr, "key: no server key in the reply (%u bytes: %.80s)\n", (unsigned)n, resp);
 		return -1;
+	}
 	return tc_unhex(server_pub, k + 18, 32);
 }
 
@@ -174,8 +179,10 @@ int ctrl_connect(ctrl *c, const char *host, int port, int capver, const uint8_t 
 		 "Connection: upgrade\r\nX-Tailscale-Handshake: %s\r\nContent-Length: 0\r\n\r\n",
 		 host, port, b64);
 	c->sock = net_connect(host, port);
-	if (c->sock < 0)
+	if (c->sock < 0) {
+		fprintf(stderr, "ts2021: cannot connect to %s:%d\n", host, port);
 		return -1;
+	}
 	net_send_all(c->sock, req, strlen(req));
 	hl = read_http_head(c->sock, head, sizeof head, &got);
 	if (hl < 0 || strncmp(head, "HTTP/1.1 101", 12) != 0) {

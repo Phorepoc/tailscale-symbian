@@ -5,6 +5,7 @@
 // "via DERP". Wire format: "TS\xf0\x9f\x92\xac" + sender disco key (32) +
 // NaCl box (nonce 24 || tag 16 || ct) of: type(1) version(1) body.
 #include <stdio.h>
+#include "log.h"
 #include <string.h>
 
 #include "tail.h"

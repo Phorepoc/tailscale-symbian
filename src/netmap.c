@@ -4,6 +4,7 @@
 // Map response handling with jsmn: self address, full peer lists,
 // PeersChanged / PeersRemoved deltas, keepalives.
 #include <stdio.h>
+#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 

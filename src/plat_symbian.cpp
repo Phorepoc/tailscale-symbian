@@ -10,6 +10,7 @@
 // core callbacks unchanged.
 #include <e32std.h>
 #include <e32math.h>
+#include <e32debug.h>
 #include <hal.h>
 
 #include <sys/types.h>
@@ -289,4 +290,15 @@ extern "C" uint64_t plat_ms(void)
 		high += (uint64_t)1 << 32;
 	last = now;
 	return ((high | now) * (uint64_t)period_us) / 1000;
+}
+
+extern "C" void plat_dbg(const char *line)
+{
+	/* RDebug::Printf takes a format; keep the text out of it, and one trace line per call */
+	TBuf8<200> b;
+	b.Copy(TPtrC8((const TUint8 *)line).Left(190));
+	for (TInt i = 0; i < b.Length(); ++i)
+		if (b[i] == '\n' || b[i] == '\r')
+			b[i] = ' ';
+	RDebug::Printf("[phetail] %S", &b);
 }

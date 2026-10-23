@@ -7,6 +7,7 @@
 // One thread, one blocking point (plat_poll) and a periodic timer tick:
 // the shape of a single active-object loop.
 #include <stdio.h>
+#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 

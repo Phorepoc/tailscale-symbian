@@ -59,3 +59,28 @@ const char *json_str(const char *from, const char *key, char *out, size_t cap)
 	out[n] = 0;
 	return e + 1;
 }
+
+/* ---- logging with a trace mirror (log.h) ---- */
+#include <stdarg.h>
+#include "plat.h"
+void phe_printf(const char *fmt, ...)
+{
+	char b[400];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(b, sizeof b, fmt, ap);
+	va_end(ap);
+	fputs(b, stdout);
+	plat_dbg(b);
+}
+
+void phe_fprintf(FILE *f, const char *fmt, ...)
+{
+	char b[400];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(b, sizeof b, fmt, ap);
+	va_end(ap);
+	fputs(b, f);
+	plat_dbg(b);
+}

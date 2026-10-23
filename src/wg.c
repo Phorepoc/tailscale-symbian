@@ -4,6 +4,7 @@
 // WireGuard over DERP: initiator + responder handshakes (Noise IKpsk2, psk = 0),
 // transport data, keepalives, rekey timers. Packets travel as DERP payloads.
 #include <stdio.h>
+#include "log.h"
 #include <stdlib.h>
 #include <string.h>
 

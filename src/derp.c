@@ -5,6 +5,7 @@
 #include "derp.h"
 
 #include <stdio.h>
+#include "log.h"
 #include <string.h>
 
 #include "net.h"
@@ -87,14 +88,19 @@ int derp_connect(const char *host, int port)
 
 	d.len = 0;
 	d.sock = net_connect(host, port);
-	if (d.sock < 0)
+	if (d.sock < 0) {
+		fprintf(stderr, "derp: connect to %s:%d failed\n", host, port);
 		return -1;
+	}
 	snprintf(req, sizeof req, "GET /derp HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: DERP\r\nConnection: Upgrade\r\n\r\n",
 		 host, port);
 	net_send_all(d.sock, req, strlen(req));
 	for (;;) {
-		if (fill(10000) <= 0 || d.len >= sizeof d.buf - 1)
+		if (fill(10000) <= 0 || d.len >= sizeof d.buf - 1) {
+			d.buf[d.len < sizeof d.buf ? d.len : 0] = 0;
+			fprintf(stderr, "derp: no HTTP reply head (%u bytes: %.60s)\n", (unsigned)d.len, (char *)d.buf);
 			return -1;
+		}
 		d.buf[d.len] = 0;
 		if ((e = strstr((char *)d.buf, "\r\n\r\n")) != NULL)
 			break;
@@ -103,6 +109,7 @@ int derp_connect(const char *host, int port)
 	consume((size_t)(e + 4 - (char *)d.buf));
 
 	t = wait_frame(&p, &n, &used);
+	if (t < 0) fprintf(stderr, "derp: no ServerKey frame within 10 s\n");
 	if (t != 1 || n < 40 || memcmp(p, "DERP\xf0\x9f\x94\x91", 8) != 0) {
 		fprintf(stderr, "derp: no server key frame (type %d)\n", t);
 		return -1;

@@ -158,3 +158,5 @@ uint64_t plat_ms(void)
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return (uint64_t)ts.tv_sec * 1000u + (uint64_t)ts.tv_nsec / 1000000u;
 }
+
+void plat_dbg(const char *line) { (void)line; }
