@@ -14,7 +14,7 @@ EPOCSTACKSIZE	0x40000
 
 OS_LAYER_SYSTEMINCLUDE_SYMBIAN
 OS_LAYER_LIBC_SYSTEMINCLUDE
-USERINCLUDE		../src ../src/lwipport ../vendor/lwip/include ../../phedav/.deps/mbedtls/include ../../phedav/.deps/mbedtls/library
+USERINCLUDE		../src ../src/lwipport ../vendor/lwip/include ../../dav-sync/.deps/mbedtls/include ../../dav-sync/.deps/mbedtls/library
 MACRO			PHETAIL_TLS
 MACRO			MBEDTLS_CONFIG_FILE="\"phetail_mbedtls_cfg.h\""
 
@@ -33,7 +33,7 @@ SOURCE			tcp.c tcp_in.c tcp_out.c timeouts.c udp.c raw.c dns.c
 SOURCEPATH		../vendor/lwip/core/ipv4
 SOURCE			icmp.c ip4.c ip4_addr.c ip4_frag.c etharp.c dhcp.c autoip.c acd.c igmp.c
 
-SOURCEPATH		../../phedav/.deps/mbedtls/library
+SOURCEPATH		../../dav-sync/.deps/mbedtls/library
 SOURCE			aes.c
 SOURCE			aesce.c
 SOURCE			aesni.c

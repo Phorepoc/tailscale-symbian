@@ -1,4 +1,6 @@
-# phetail
+# Phorepoc tailscale-symbian
+
+Repository: `Phorepoc/tailscale-symbian`. The daemon and its settings keep the component name `phetail` (`phetaild`, `C:/data/phetail/` on the phone).
 
 A small, portable C99 client for the Tailscale protocol (Headscale or, later,
 tailscale.com control), meant to run on constrained and unusual platforms.
@@ -110,7 +112,7 @@ TLS (https control and DERP), zstd maps, DNS beyond peer names, IPv6.
 - **SOCKS.** The existing SOCKS5 front-end on 127.0.0.1 (default port 1055) is what other applications on the device use;
   `socksget` (`group/socksget.mmp`) is a small test client.
 - **Arguments from a file.** `--args <file>` (whitespace separated) for launchers with a short command-line limit.
-- mbedTLS sources are expected at `../phedav/.deps/mbedtls` (see the phedav repo's fetch).
+- mbedTLS sources are expected at `../dav-sync/.deps/mbedtls` (see the dav-sync repo's fetch).
 
 ## License
 Apache-2.0 (see `LICENSE`); vendored third-party code keeps its own licences, listed in `NOTICE` and `vendor/README.md`.
