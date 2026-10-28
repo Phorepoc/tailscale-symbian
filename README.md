@@ -1,6 +1,6 @@
 # tailscale-symbian
 
-This is a small Tailscale client written in plain C99, so it can run on old and unusual systems that the official
+This is a small Tailscale client written in plain C99, so it can run on legacy systems that the official
 client will never support. It joins your tailnet through a [Headscale](https://headscale.net) server (tailscale.com
 support may come later), and lets the apps on the device reach your other machines through a SOCKS5 proxy on
 `127.0.0.1:1055`.
