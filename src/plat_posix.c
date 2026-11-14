@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // POSIX implementation of plat.h (Linux, BSD, macOS).
 #define _POSIX_C_SOURCE 200809L

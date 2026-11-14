@@ -1,7 +1,7 @@
 Phorepoc tailscale-symbian (component name: phetail)
 Copyright The Phorepoc Authors
 
-Licensed under the Apache License, Version 2.0 (see LICENSE). Our own files carry an SPDX-License-Identifier header.
+Phorepoc code licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only, LICENSE), with the additional terms in ADDITIONAL-TERMS.md (section 7(b) attributions, section 7(e) names and logos). Our own files carry an SPDX-License-Identifier header.
 
 Vendored third-party code, unmodified and with its own licence files (see vendor/README.md; no GPL):
 - monocypher 4.0.2 (X25519, ChaCha20, Poly1305): BSD-2-Clause or CC0-1.0
@@ -13,3 +13,9 @@ Vendored third-party code, unmodified and with its own licence files (see vendor
 Optional TLS (build flag -DPHETAIL_TLS): links mbedTLS 3.6 (Apache-2.0 OR GPL-2.0-or-later; used under Apache-2.0), which is not included here.
 The spike recipes (spike/) start Headscale (BSD-3-Clause) and the official Tailscale container image (BSD-3-Clause) as separate programs.
 phetail speaks the Tailscale protocol; Tailscale is a trademark of its owner and this project is not affiliated with it.
+
+Licensing. The Phorepoc code is AGPL-3.0-only with additional terms under its section 7 (ADDITIONAL-TERMS.md):
+the attribution "Phorepoc, founded by Kyriakos Bompotis" and these notices must be kept, also where a work based on
+it shows legal notices; no rights are granted to the Phorepoc names and logos (TRADEMARKS.md). It is dual-licensed:
+commercial licences are available from the founder (see README.md, "Licensing"). Third-party code keeps its own
+licence and header.

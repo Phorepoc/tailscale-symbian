@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Stream layer between the protocol code (ctrl, DERP) and the platform sockets: plain TCP, or TLS (mbedTLS) with the server
 // certificate pinned by the SHA-256 of its DER encoding. The handle is the platform socket handle; local SOCKS sockets

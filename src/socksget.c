@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // socksget: fetches http://<host>:<port><path> through a SOCKS5 proxy (default 127.0.0.1:1055, the phetaild front-end) and
 // prints the reply. A test client: it shows that an ordinary application can reach a tailnet peer through the device.

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // socksget for Symbian (Open C console exe): a SOCKS5 test client for phetaild's front-end.
 TARGET			socksget.exe

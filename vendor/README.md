@@ -8,4 +8,4 @@
 | `lwip/` | lwIP userspace TCP/IP (`src/core`, `src/include` only) | 2.2.0 (STABLE-2_2_0_RELEASE) | BSD-3-Clause (`COPYING`) |
 | `tweetnacl/` | NaCl `crypto_box` (DERP ClientInfo) | 20140427 | public domain (`LICENSE`) |
 
-No GPL code. Our own files are Apache-2.0.
+No GPL code. Our own files are AGPL-3.0-only.

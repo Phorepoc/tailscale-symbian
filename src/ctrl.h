@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Control-plane client: /key, the ts2021 Noise IK upgrade, and a minimal
 // HTTP/2 (h2c) client running inside the Noise transport.

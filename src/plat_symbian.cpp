@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Symbian implementation of plat.h: Open C (P.I.P.S.) BSD sockets + select,
 // Symbian user-library calls for time and entropy.

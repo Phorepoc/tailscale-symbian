@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Platform layer: the only place the core touches the OS. A POSIX version
 // lives in plat_posix.c; a Symbian Open C one can follow the same contract.

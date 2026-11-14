@@ -66,6 +66,12 @@ The rest is laid out by protocol: `ctrl` talks to the control server, `derp` to 
 - The proxy only listens on 127.0.0.1, but any program on the same device can use it.
 - Please report vulnerabilities privately, as described in `SECURITY.md`.
 
-## License
+## Licensing
 
-Apache-2.0. The third-party code keeps its own licenses, listed in `NOTICE` and `vendor/README.md`.
+This is Phorepoc code, licensed under the [GNU Affero General Public License, version 3 only](LICENSE) (`AGPL-3.0-only`), with the [additional terms](ADDITIONAL-TERMS.md) its section 7 allows: keep the attribution "Phorepoc, founded by Kyriakos Bompotis" and the legal notices (also where your version shows notices, such as an About screen), and no rights to the Phorepoc names and logos ([TRADEMARKS.md](TRADEMARKS.md)). If you run a modified version for users over a network, AGPL section 13 asks you to offer them its source.
+
+The vendored third-party code keeps its own licences, listed in `NOTICE` and `vendor/README.md`.
+
+Phorepoc is dual-licensed. Commercial licences or licence exceptions (for example to ship it inside a closed product without the AGPL obligations) are available on request from the founder, Kyriakos Bompotis.
+
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the licence grant they need.

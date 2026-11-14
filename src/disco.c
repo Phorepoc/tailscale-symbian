@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Minimal disco: answer Ping with Pong over DERP, so peers see us as reachable
 // "via DERP". Wire format: "TS\xf0\x9f\x92\xac" + sender disco key (32) +

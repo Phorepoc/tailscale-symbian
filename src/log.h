@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Include after <stdio.h>: printf and fprintf also go to plat_dbg (the platform's trace channel: the serial port on Symbian), so a
 // stalled or crashed daemon can be followed from outside even when its log file never reaches the disk.

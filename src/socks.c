@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // SOCKS5 front-end (RFC 1928, CONNECT only, no auth) bridging local client
 // sockets to lwIP TCP connections inside the tailnet.

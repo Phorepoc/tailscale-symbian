@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // The primitives Tailscale needs: X25519, ChaCha20-Poly1305 (RFC 8439),
 // BLAKE2s, HMAC-BLAKE2s HKDF, and NaCl box (for DERP ClientInfo).

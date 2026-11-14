@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: AGPL-3.0-only
 #
 # S0/S1 spike recipe, run on a Linux box with Docker. HOST = that box's LAN IP.
 # Every container is capped (--cpus 1 --memory 1g).

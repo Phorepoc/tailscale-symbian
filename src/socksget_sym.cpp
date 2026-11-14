@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // socksget on Symbian: a trace line on the serial port (RDebug) so a test host can read the fetched page without the disk.
 #include <e32std.h>

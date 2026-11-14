@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // lwIP configuration for phetail: raw API, single thread (NO_SYS), IPv4 + TCP
 // over one point-to-point netif (the WireGuard tunnel). No ARP, no DHCP.

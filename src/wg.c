@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // WireGuard over DERP: initiator + responder handshakes (Noise IKpsk2, psk = 0),
 // transport data, keepalives, rekey timers. Packets travel as DERP payloads.

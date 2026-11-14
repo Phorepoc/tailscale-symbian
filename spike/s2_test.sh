@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: AGPL-3.0-only
 #
 # S2 check on the spike box (after run.sh set up Headscale + phe-tsnode):
 # rebuilds phetaild, runs it in a capped container, serves a page inside the

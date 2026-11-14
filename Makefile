@@ -1,5 +1,5 @@
 # Copyright The Phorepoc Authors
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: AGPL-3.0-only
 CC ?= cc
 CFLAGS ?= -std=c99 -O2 -Wall -Wno-unused-parameter
 LWIP = vendor/lwip

@@ -1,5 +1,5 @@
 // Copyright The Phorepoc Authors
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: AGPL-3.0-only
 //
 // Shared daemon state: the node's keys, the peer table, and the hooks the
 // modules use to talk to each other. Everything runs on one thread.
