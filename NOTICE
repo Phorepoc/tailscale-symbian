@@ -1,7 +1,7 @@
 Phorepoc tailscale-symbian (component name: phetail)
 Copyright The Phorepoc Authors
 
-Phorepoc code licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only, LICENSE), with the additional terms in ADDITIONAL-TERMS.md (section 7(b) attributions, section 7(e) names and logos). Our own files carry an SPDX-License-Identifier header.
+Phorepoc code licensed under the GNU Affero General Public License, version 3 only (AGPL-3.0-only, LICENSE), with the additional terms in ADDITIONAL-TERMS.md (section 7(b) attributions, section 7(e) names and logos). Phorepoc's own files carry an SPDX-License-Identifier header.
 
 Vendored third-party code, unmodified and with its own licence files (see vendor/README.md; no GPL):
 - monocypher 4.0.2 (X25519, ChaCha20, Poly1305): BSD-2-Clause or CC0-1.0
